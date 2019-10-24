@@ -30,6 +30,9 @@ object AnalyzeData {
     sorted.show(10)
 
 
+    df.printSchema()
+
+
 
 
   }
