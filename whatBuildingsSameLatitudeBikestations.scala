@@ -23,7 +23,7 @@ object whatBuildingsSameLatitudeBikestations {
   def removeBuildingsThatAreFarAway(df: DataFrame, sparkSession: SparkSession) {
     import sparkSession.implicits._
     val latDiff = df.filter(($"start_bike_lat".cast(DoubleType) % $"_lat".cast(DoubleType) < 0.005) && $"end_bike_lon".cast(DoubleType) % $"_lon".cast(DoubleType) < 0.005)
-    latDiff.show(10000)
+    latDiff.show(1000)
   }
 
   def getLatitudeBikes(spark: SparkSession) : DataFrame = {
