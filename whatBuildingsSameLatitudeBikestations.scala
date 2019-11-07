@@ -12,18 +12,20 @@ object whatBuildingsSameLatitudeBikestations {
     val sc = new SparkContext(d)
     sc.setLogLevel("ERROR")
     val sparkmain = SparkSession.builder().getOrCreate()
-
     val latBikes = getLatitudeBikes(sparkmain)
-    val nodeDf= getLatitudeBuildings(sparkmain)
+    val latBuildings= getLatitudeBuildings(sparkmain)
 
-    val joined = latBikes.crossJoin(nodeDf)
-    removeBuildingsThatAreFarAway(joined, sparkmain)
+    val joined = latBikes.crossJoin(latBuildings)
+    val filteredOnDistance = removeBuildingsThatAreFarAway(joined, sparkmain)
+    filteredOnDistance.show(1000)
   }
 
-  def removeBuildingsThatAreFarAway(df: DataFrame, sparkSession: SparkSession) {
+  def removeBuildingsThatAreFarAway(df: DataFrame, sparkSession: SparkSession) : DataFrame = {
     import sparkSession.implicits._
-    val latDiff = df.filter(($"start_bike_lat".cast(DoubleType) % $"_lat".cast(DoubleType) < 0.005) && $"end_bike_lon".cast(DoubleType) % $"_lon".cast(DoubleType) < 0.005)
-    latDiff.show(1000)
+    val latDiff = df.filter(($"start_bike_lat".cast(DoubleType) % $"_lat".cast(DoubleType) < 0.005)
+      && $"end_bike_lon".cast(DoubleType) % $"_lon".cast(DoubleType) < 0.005)
+
+    return latDiff
   }
 
   def getLatitudeBikes(spark: SparkSession) : DataFrame = {
@@ -34,8 +36,9 @@ object whatBuildingsSameLatitudeBikestations {
       .load("input/bikeextractseptember2019.csv")
 
     val lat = df.select( $"start_station_id").groupBy( $"start_station_id").count()
-    val lon = df.select($"start_station_id", $"start_station_name",round($"start_station_longitude", 6).as("end_bike_lon"), round($"start_station_latitude", 6).as("start_bike_lat"))
-    val joined = lat.join(lon, lat("start_station_id") === lon("start_station_id"))
+    val lon = df.select($"start_station_id", $"start_station_name",round($"start_station_longitude", 6).as("end_bike_lon"),
+      round($"start_station_latitude", 6).as("start_bike_lat"))
+    val joined = lat.join(lon, Seq("start_station_id"))
 
    joined
   }
